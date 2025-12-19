@@ -2,6 +2,7 @@
   "name": "my-monorepo",
   "scripts": {
     "dev": "pnpm --parallel dev",
+    "start": "pnpm --parallel start",
     "api:dev": "pnpm --filter @monorepo/api dev",
     "api:migrate": "pnpm --filter @monorepo/api migrate",
     "admin:dev": "pnpm --filter @monorepo/admin dev",

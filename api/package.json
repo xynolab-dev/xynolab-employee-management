@@ -2,6 +2,7 @@
   "name": "api",
   "scripts": {
     "dev": "make run",
+    "start": "make run",
     "migrate": "make migration"
   }
 }
