@@ -1,0 +1,76 @@
+name: Build and Deploy Docker Image
+
+on:
+  push:
+    branches:
+      - main
+      # - staging
+
+jobs:
+  build_and_deploy:
+    runs-on: self-hosted
+    environment: ${{ github.ref_name }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setting some github env
+        run: |
+          echo "BRANCH=${GITHUB_REF_NAME,,}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "SERVER_IP=${{ secrets.SERVER_IP }}" >> $GITHUB_ENV
+          echo "API_PORT=${{ secrets.API_PORT }}" >> $GITHUB_ENV
+          echo "ADMIN_PORT=${{ secrets.ADMIN_PORT }}" >> $GITHUB_ENV
+
+      - name: Create .env from ENV_FILE secret
+        run: |
+          cat > api/.env << 'EOF'
+          ${{ secrets.ENV_FILE_API }}
+          EOF
+          cat > admin/.env << 'EOF'
+          ${{ secrets.ENV_FILE_ADMIN }}
+          EOF
+
+      - name: Build Docker image
+        run: |
+          docker build --progress=plain \
+            -f Dockerfile \
+            -t employee:$IMAGE_TAG \
+            -t employee:$BRANCH-latest .
+
+      - name: Deploy to servers
+        run: |
+          mkdir -p ~/.ssh/employee
+          printf "%s\n" "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/employee/id_rsa
+          chmod 600 ~/.ssh/employee/id_rsa
+
+          docker save -o employee.tar employee:$IMAGE_TAG employee:$BRANCH-latest
+
+          echo "Deploying to $SERVER_IP"
+
+          ssh-keyscan -H $SERVER_IP >> ~/.ssh/known_hosts
+
+          scp -i ~/.ssh/employee/id_rsa employee.tar ubuntu@$SERVER_IP:/tmp
+
+          ssh -i ~/.ssh/employee/id_rsa ubuntu@$SERVER_IP <<EOF
+
+
+            docker images -q --filter "reference=employee" | xargs -r docker rmi -f
+            docker load -i /tmp/employee.tar
+            docker ps -q --filter name=employee-${{ env.BRANCH }} | xargs -r docker stop
+            docker ps -a -q --filter "name=employee-${{ env.BRANCH }}" | xargs -r docker rm
+
+            docker run -d --restart=always -p ${{ env.API_PORT }}:8000 -p ${{ env.ADMIN_PORT }}:3000 --name employee-${{ env.BRANCH }} employee:${{ env.BRANCH }}-latest
+
+            docker image prune -a -f
+
+            rm -f /tmp/employee.tar
+          EOF
+
+          rm -f ~/.ssh/employee/id_rsa
+          rm -f employee.tar
+
+          docker images -q --filter "dangling=true" | xargs -r docker rmi -f
+          docker images -q --filter "reference=employee" | xargs -r docker rmi -f
+          docker container prune -f
+          docker volume ls -q --filter dangling=true | xargs -r docker volume rm -f

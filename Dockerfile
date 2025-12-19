@@ -11,4 +11,5 @@ RUN make setup
 WORKDIR /app/admin
 RUN corepack enable pnpm
 RUN pnpm install --frozen-lockfile
+RUN pnpm build
 CMD ["sh", "-c", "pnpm start"]
