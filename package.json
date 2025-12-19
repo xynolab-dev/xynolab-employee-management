@@ -1,0 +1,11 @@
+{
+  "name": "my-monorepo",
+  "scripts": {
+    "dev": "pnpm --parallel dev",
+    "api:dev": "pnpm --filter @monorepo/api dev",
+    "api:migrate": "pnpm --filter @monorepo/api migrate",
+    "admin:dev": "pnpm --filter @monorepo/admin dev",
+    "admin:build": "pnpm --filter @monorepo/admin build",
+    "admin:start": "pnpm --filter @monorepo/admin start"
+  }
+}
