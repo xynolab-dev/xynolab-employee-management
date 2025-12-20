@@ -3,6 +3,8 @@
   "scripts": {
     "dev": "make run",
     "start": "make run",
-    "migrate": "make migration"
+    "make:install": "make install",
+    "make:setup": "make setup",
+    "make:migrate": "make migrate"
   }
 }

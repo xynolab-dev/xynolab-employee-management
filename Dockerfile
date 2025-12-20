@@ -6,10 +6,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY . .
-WORKDIR /app/api
-RUN make setup
-WORKDIR /app/admin
 RUN corepack enable pnpm
-RUN pnpm install --frozen-lockfile
-RUN pnpm build
-CMD ["sh", "-c", "pnpm start"]
+RUN pnpm -F api make:setup
+RUN pnpm -F admin install --frozen-lockfile
+RUN pnpm -F admin build
+CMD ["sh", "-c", "pnpm -F api make:migrate && pnpm start"]
