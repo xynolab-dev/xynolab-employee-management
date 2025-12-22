@@ -9,6 +9,6 @@ COPY . .
 RUN corepack enable pnpm
 RUN pnpm -F api make:setup
 RUN pnpm -F admin install --frozen-lockfile
-# RUN pnpm -F admin build
-# CMD ["sh", "-c", "pnpm -F api make:migrate && pnpm start"]
-CMD ["sh", "-c", "pnpm -F api make:migrate && pnpm dev"]
+RUN pnpm -F admin build
+CMD ["sh", "-c", "pnpm -F api make:migrate && pnpm start"]
+# CMD ["sh", "-c", "pnpm -F api make:migrate && pnpm dev"]
